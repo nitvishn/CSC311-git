@@ -1,5 +1,13 @@
-from sklearn.feature_extraction import DictVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn import tree
+import graphviz
+import random
+import numpy as np
+import matplotlib.pyplot as plt
 
+TRAIN_PROPORTION = 0.7
+TEST_TO_VALIDATE_RATIO = 0.1
 
 def load_data():
     
@@ -8,38 +16,75 @@ def load_data():
     fake_file = open('clean_fake.txt', 'r')
 
     # build set of words, and store sentences as list of tokens
-    sentences = []
-    words = set()
-    real_size = 0
-    fake_size = 0
-    for line in real_file:
-        words.update(set(line.split()))
-        sentences.append(line.split())
-        real_size += 1
-    for line in fake_file:
-        words.update(set(line.split()))
-        sentences.append(line.split())
-        fake_size += 1
-
-    # convert sentences from lists of tokens to mappings of words to frequencies
-    for i in range(len(sentences)):
-        s = sentences[i]
-        s_dict = {}
-        for word in words:
-            s_dict[word] = s.count(word)
-        sentences[i] = s_dict
+    real_sentences = [line for line in real_file] 
+    fake_sentences = [line for line in fake_file]
+    corpus = real_sentences + fake_sentences
 
     # make labels
-    labels = ['real'] * real_size + ['fake'] * fake_size
+    labels = np.array(['real'] * len(real_sentences) + ['fake'] * len(fake_sentences))
 
-    # extract features
-    v = DictVectorizer()
-    X = v.fit_transform(sentences)
+    # split the data
+    X_train, X_test, y_train, y_test = train_test_split(corpus, labels, train_size=TRAIN_PROPORTION)
+    X_test, X_validate, y_test, y_validate = train_test_split(X_test, y_test, train_size=TEST_TO_VALIDATE_RATIO)
 
-    Y = 
+    print(f"Training, validation, test split: ({len(X_train), len(X_test), len(X_validate)})")
 
-    # return features and labels 
-    return 
+    # vectorize the sentences
+    vectorizer = CountVectorizer()
+    X_train = vectorizer.fit_transform(X_train)
+    X_validate = vectorizer.transform(X_validate)
+    X_test = vectorizer.transform(X_test)
+
+    # return the train, validate, test data and the vectorizer
+
+    return (X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer)
+
+def measure_accuracy(test, predicted):
+    assert len(test) == len(predicted) 
+    tot = 0
+    correct = 0
+    for i in range(len(test)):
+        if test[i] == predicted[i]:
+            correct += 1
+        tot += 1
+    return correct/tot
+
+def select_model(X_train, X_validate, X_test, y_train, y_validate, y_test):
+
+    depths = np.arange(50, 300, 50)
+    criteria = ['gini', 'entropy', 'log_loss']
+    hyperparams = [(d, c) for d in depths for c in criteria]
+    val_accuracies = np.zeros((len(criteria), len(depths)))
+
+    for i, criterion in enumerate(criteria):
+        for j, d in enumerate(depths):
+            clf = tree.DecisionTreeClassifier(max_depth=d, criterion=criterion)
+            clf = clf.fit(X_train, y_train)
+
+            y_validation_prediction = clf.predict(X_validate)
+            
+            val_accuracies[i, j] = measure_accuracy(y_validate, y_validation_prediction)
+
+            print(f"Depth {d:3} with {criterion:8} criterion had validation accuracy {measure_accuracy(y_validate, y_validation_prediction):0.5f} ")
+    
+    return (np.argmax(val_accuracies))
+
+    # fig = plt.figure()
+    # for criterion in criteria:
+    #     y_acc = []
+    #     plt.scatter()
+
+    # dot_data = tree.export_graphviz(clf, 
+    #                                 out_file=None, 
+    #                                 feature_names=vectorizer.get_feature_names_out(),
+    #                                 max_depth=2, 
+    #                                 filled=True, 
+    #                                 rounded=True) 
+    # graph = graphviz.Source(dot_data) 
+    # graph.render("iris", format="png") 
 
 if __name__ == "__main__":
-    load_data()
+    X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer = load_data()
+    i = select_model(X_train, X_validate, X_test, y_train, y_validate, y_test)
+
+    print(i)
