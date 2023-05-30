@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+0 [label="the <= 0.5\ngini = 0.478\nsamples = 2286\nvalue = [904, 1382]", fillcolor="#bbddf6"] ;
+1 [label="donald <= 0.5\ngini = 0.447\nsamples = 1923\nvalue = [648, 1275]", fillcolor="#9ecff2"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="hillary <= 0.5\ngini = 0.487\nsamples = 1286\nvalue = [540, 746]", fillcolor="#c8e4f8"] ;
+1 -> 2 ;
+3 [label="(...)", fillcolor="#C0C0C0"] ;
+2 -> 3 ;
+420 [label="(...)", fillcolor="#C0C0C0"] ;
+2 -> 420 ;
+429 [label="and <= 0.5\ngini = 0.282\nsamples = 637\nvalue = [108, 529]", fillcolor="#61b1ea"] ;
+1 -> 429 ;
+430 [label="(...)", fillcolor="#C0C0C0"] ;
+429 -> 430 ;
+571 [label="(...)", fillcolor="#C0C0C0"] ;
+429 -> 571 ;
+602 [label="trumps <= 0.5\ngini = 0.416\nsamples = 363\nvalue = [256, 107]", fillcolor="#f0b68c"] ;
+0 -> 602 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+603 [label="us <= 0.5\ngini = 0.396\nsamples = 350\nvalue = [255, 95]", fillcolor="#efb083"] ;
+602 -> 603 ;
+604 [label="(...)", fillcolor="#C0C0C0"] ;
+603 -> 604 ;
+747 [label="(...)", fillcolor="#C0C0C0"] ;
+603 -> 747 ;
+756 [label="energy <= 0.5\ngini = 0.142\nsamples = 13\nvalue = [1, 12]", fillcolor="#49a5e7"] ;
+602 -> 756 ;
+757 [label="(...)", fillcolor="#C0C0C0"] ;
+756 -> 757 ;
+758 [label="(...)", fillcolor="#C0C0C0"] ;
+756 -> 758 ;
+}
