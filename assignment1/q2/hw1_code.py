@@ -105,7 +105,8 @@ if __name__ == "__main__":
 
     print(f"\nA model trained on the best hyperparameters (depth={depth}, criterion={criterion}) had test accuracy {acc}")
 
-    print(compute_information_gain(X_train, y_train, "the", 0.5))
+
+
 
     dot_data = tree.export_graphviz(clf,
                                     out_file=None,
