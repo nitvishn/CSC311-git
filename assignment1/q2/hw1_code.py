@@ -1,14 +1,21 @@
 import graphviz as graphviz
 import numpy as np
+import sklearn.tree
 from sklearn import tree
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
-TRAIN_PROPORTION = 0.7
-TEST_TO_VALIDATE_RATIO = 0.1
+TRAIN_PROPORTION = 0.7  # proportion of data to use for training
+TEST_TO_VALIDATE_RATIO = 0.5  # proportion of test:validation data
 
 
 def load_data():
+    """
+    Loads the data, preprocesses it using the vectorizer, and splits it into train, validate, and test sets.
+    Returns: (X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer)
+
+    """
     # load clean data
     real_file = open('clean_real.txt', 'r')
     fake_file = open('clean_fake.txt', 'r')
@@ -50,10 +57,26 @@ def measure_accuracy(test, predicted):
     return correct / tot
 
 
-def select_model(x_train, x_validate, X_test, y_train, y_validate, y_test, plot_results=False):
-    depths = np.arange(50, 300, 50)
+def select_model(x_train, x_validate, y_train, y_validate, plot_validation_accuracy=False):
+    """
+    - Trains the decision tree classifier using at least 5 different values of max_depth,
+    as well as three different split criteria (information gain, log loss and Gini coefficient),
+    - Evaluates the performance of each one on the validation set
+    - Prints the resulting accuracies of each model.
+    - Additionally, for the hyperparameters that achieve the highest validation accuracy,
+    reports the corresponding test accuracy.
+    Args:
+        x_train:
+        x_validate:
+        y_train:
+        y_validate:
+
+    Returns:
+
+    """
+    depths = np.arange(50, 1000, 50)
     criteria = ['gini', 'entropy', 'log_loss']
-    hyperparams = [(d, c) for d in depths for c in criteria]
+    hyperparams = [(d, c) for c in criteria for d in depths]
     val_accuracies = np.zeros((len(criteria), len(depths)))
 
     for i, criterion in enumerate(criteria):
@@ -70,28 +93,108 @@ def select_model(x_train, x_validate, X_test, y_train, y_validate, y_test, plot_
 
     best_ind = np.argmax(val_accuracies)
 
+    if plot_validation_accuracy:
+        # scatter validation accuracy against max_depth, drawing lines for each criterion
+        for i, criterion in enumerate(criteria):
+            plt.scatter(depths, val_accuracies[i, :])
+            plt.plot(depths, val_accuracies[i, :], label=criterion)
+
+
+        plt.title('Validation accuracy vs. max_depth')
+
+        plt.xlabel('max_depth')
+        plt.ylabel('validation accuracy')
+        plt.legend()
+        plt.show()
+
     return hyperparams[best_ind]
 
-    # fig = plt.figure()
-    # for criterion in criteria:
-    #     y_acc = []
-    #     plt.scatter()
+def calc_entropy(prob_array: np.array):
+    """
+    Given a 1-D probability distribution, compute the entropy.
+    Args:
+        prob_array: A 1-D numpy array representing a probability distribution.
+
+    Returns: The entropy of the probability distribution.
+    """
+    assert np.isclose(np.sum(prob_array), 1), "Probabilities must sum to 1."
+
+    p_replaced = np.where(prob_array == 0, 1, prob_array)  # replace 0s with 1s to avoid log(0) errors.
+    return -np.sum(prob_array * np.log2(p_replaced))
 
 
-def compute_information_gain(X_train, y_train, feature, threshold):
-
-    # joint_pdf = np.array([
-    #     X_train[]
-    # ])
-    #
-    # entropy =
-
-    pass
+def calc_expectation(var_vals: np.array, var_probs: np.array):
+    return sum(var_vals * var_probs)
 
 
-if __name__ == "__main__":
+def compute_information_gain(x_train: np.array, y_train: np.array, feature_ind: int, threshold: float):
+    """
+    Compute the information gain for a given feature and threshold.
+    Args:
+        x_train: The training data, where each row is a datapoint and each column is a feature.
+        y_train: The training labels, where each row is a label.
+        feature_ind: The index of the feature to compute the information gain for.
+        threshold: The threshold to compute the information gain for.
+
+    Returns: The information gain for the given feature and threshold.
+
+    """
+    above_t = np.transpose(
+        x_train[:, feature_ind] >= threshold)  # contains True if the feature for a datapoint is above the threshold.
+    below_t = np.logical_not(above_t)  # contains True if the feature for a datapoint is below the threshold.
+
+    possible_x_conclusions = [below_t, above_t]
+    possible_labels = np.unique(y_train)
+
+    n_labels = len(possible_labels)
+    label_count_table = np.zeros((2, n_labels))
+
+    for i, conc in enumerate(possible_x_conclusions):
+        for j, label in enumerate(possible_labels):
+            label_count_table[i, j] = np.sum(np.logical_and(conc, y_train == label))
+
+    probs = label_count_table / len(y_train)
+
+    x_probs: np.array = probs.sum(axis=1)
+    y_probs: np.array = probs.sum(axis=0)
+
+    probs_y_given_x = probs / x_probs[:, None]
+
+    entropy_y = calc_entropy(y_probs)
+
+    conditional_entropies = [calc_entropy(probs_y_given_x[i]) for i in range(len(x_probs))]
+
+    expected_conditional_entropy = calc_expectation(conditional_entropies, x_probs)
+
+    inf_gain = entropy_y - expected_conditional_entropy
+
+    return inf_gain
+
+
+def compute_information_gain_for(X_train: np.array, y_train: np.array, feature: str, threshold,
+                                 vectorizer: CountVectorizer, print_gain=False):
+    feature_arr = vectorizer.get_feature_names_out()
+    feature_ind = np.where(feature_arr == feature)[0][0]
+    gain = compute_information_gain(X_train, y_train, feature_ind, threshold)
+    if print_gain:
+        print(f"Information gain for feature `{feature}` with threshold {threshold} is {gain}")
+
+
+def export_tree(classifier: sklearn.tree.DecisionTreeClassifier):
+    dot_data = tree.export_graphviz(classifier,
+                                    out_file=None,
+                                    feature_names=vectorizer.get_feature_names_out(),
+                                    max_depth=2,
+                                    filled=True,
+                                    rounded=True)
+    graph = graphviz.Source(dot_data)
+    graph.render(filename="best_tree", directory="figures", format="png")
+
+
+if __name__ == '__main__':
+    # load the data
     X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer = load_data()
-    depth, criterion = select_model(X_train, X_validate, X_test, y_train, y_validate, y_test)
+    depth, criterion = select_model(X_train, X_validate, y_train, y_validate, True)
 
     # train a model with the best hyperparameters
     clf = tree.DecisionTreeClassifier(max_depth=depth, criterion=criterion)
@@ -103,16 +206,16 @@ if __name__ == "__main__":
     y_test_prediction = clf.predict(X_test)
     acc = measure_accuracy(y_test, y_test_prediction)
 
-    print(f"\nA model trained on the best hyperparameters (depth={depth}, criterion={criterion}) had test accuracy {acc}")
+    X_train_arr = X_train.toarray()
 
+    print(
+        f"\nA model trained on the best hyperparameters (depth={depth}, criterion={criterion}) had test accuracy {acc}")
 
+    # print some information gain values
+    compute_information_gain_for(X_train_arr, y_train, "donald", 0.5, vectorizer, print_gain=True)
+    compute_information_gain_for(X_train_arr, y_train, "trumps", 0.5, vectorizer, print_gain=True)
+    compute_information_gain_for(X_train_arr, y_train, "the", 0.5, vectorizer, print_gain=True)
+    compute_information_gain_for(X_train_arr, y_train, "hillary", 0.5, vectorizer, print_gain=True)
+    compute_information_gain_for(X_train_arr, y_train, "and", 0.5, vectorizer, print_gain=True)
 
-
-    dot_data = tree.export_graphviz(clf,
-                                    out_file=None,
-                                    feature_names=vectorizer.get_feature_names_out(),
-                                    max_depth=2,
-                                    filled=True,
-                                    rounded=True)
-    graph = graphviz.Source(dot_data)
-    graph.render(filename="iris", directory="figures", format="png")
+    export_tree(clf)
