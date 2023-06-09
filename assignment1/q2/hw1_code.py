@@ -47,7 +47,10 @@ def load_data():
     return (X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer)
 
 
-def measure_accuracy(test, predicted):
+def measure_accuracy(test, predicted) -> float:
+    """
+    Measures the accuracy of the predicted labels as a fraction of the total number of labels predicted correctly.
+    """
     assert len(test) == len(predicted)
     tot = 0
     correct = 0
@@ -132,6 +135,9 @@ def calc_entropy(prob_array: np.array):
 
 
 def calc_expectation(var_vals: np.array, var_probs: np.array):
+    """
+    Given a 1-D array of variable values and a 1-D array of probabilities, compute the expectation.
+    """
     return np.sum(var_vals * var_probs)
 
 
@@ -184,6 +190,9 @@ def compute_information_gain(x_train: np.array, y_train: np.array, feature_ind: 
 
 def compute_information_gain_for(X_train: np.array, y_train: np.array, feature: str, threshold,
                                  vectorizer: CountVectorizer, print_gain=False):
+    """
+    A wrapper for compute_information_gain that takes a feature name instead of an index.
+    """
     feature_arr = vectorizer.get_feature_names_out()
     feature_ind = np.where(feature_arr == feature)[0][0]
     gain = compute_information_gain(X_train, y_train, feature_ind, threshold)
@@ -192,6 +201,9 @@ def compute_information_gain_for(X_train: np.array, y_train: np.array, feature: 
 
 
 def export_tree(classifier: sklearn.tree.DecisionTreeClassifier, vectorizer: CountVectorizer):
+    """
+    Export a decision tree to a png file.
+    """
     dot_data = tree.export_graphviz(classifier,
                                     out_file=None,
                                     feature_names=vectorizer.get_feature_names_out(),
@@ -232,5 +244,4 @@ def q2_d():
 
 
 if __name__ == '__main__':
-    np.random.seed(3)
     q2_d()
