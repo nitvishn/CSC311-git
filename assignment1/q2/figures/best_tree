@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+0 [label="the <= 0.5\nentropy = 0.966\nsamples = 2286\nvalue = [896, 1390]", fillcolor="#b9dcf6"] ;
+1 [label="donald <= 0.5\nentropy = 0.921\nsamples = 1921\nvalue = [646, 1275]", fillcolor="#9dcff2"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label="hillary <= 0.5\nentropy = 0.979\nsamples = 1267\nvalue = [525, 742]", fillcolor="#c5e2f7"] ;
+1 -> 2 ;
+3 [label="(...)", fillcolor="#C0C0C0"] ;
+2 -> 3 ;
+450 [label="(...)", fillcolor="#C0C0C0"] ;
+2 -> 450 ;
+455 [label="le <= 0.5\nentropy = 0.691\nsamples = 654\nvalue = [121, 533]", fillcolor="#66b3eb"] ;
+1 -> 455 ;
+456 [label="(...)", fillcolor="#C0C0C0"] ;
+455 -> 456 ;
+617 [label="(...)", fillcolor="#C0C0C0"] ;
+455 -> 617 ;
+618 [label="trumps <= 0.5\nentropy = 0.899\nsamples = 365\nvalue = [250, 115]", fillcolor="#f1bb94"] ;
+0 -> 618 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+619 [label="hillary <= 0.5\nentropy = 0.869\nsamples = 351\nvalue = [249, 102]", fillcolor="#f0b58a"] ;
+618 -> 619 ;
+620 [label="(...)", fillcolor="#C0C0C0"] ;
+619 -> 620 ;
+797 [label="(...)", fillcolor="#C0C0C0"] ;
+619 -> 797 ;
+798 [label="coal <= 0.5\nentropy = 0.371\nsamples = 14\nvalue = [1, 13]", fillcolor="#48a5e7"] ;
+618 -> 798 ;
+799 [label="(...)", fillcolor="#C0C0C0"] ;
+798 -> 799 ;
+800 [label="(...)", fillcolor="#C0C0C0"] ;
+798 -> 800 ;
+}
