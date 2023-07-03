@@ -1,0 +1,4 @@
+Information gain for feature `the     ` with threshold 0.5 is 0.04388027604368
+Information gain for feature `donald  ` with threshold 0.5 is 0.04286986143652
+Information gain for feature `trumps  ` with threshold 0.5 is 0.04333523607079
+Information gain for feature `hillary ` with threshold 0.5 is 0.03414166828335

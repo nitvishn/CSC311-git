@@ -5,6 +5,7 @@ from sklearn import tree
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+from typing import Tuple
 
 TRAIN_PROPORTION = 0.7  # proportion of data to use for training
 TEST_TO_VALIDATE_RATIO = 0.5  # proportion of test:validation data
@@ -33,7 +34,7 @@ def load_data():
     X_test, X_validate, y_test, y_validate = train_test_split(X_test, y_test,
                                                               train_size=TEST_TO_VALIDATE_RATIO)
 
-    print(f"Training, validation, test split: ({len(X_train), len(X_test), len(X_validate)})")
+    # print(f"Training, validation, test split: ({len(X_train), len(X_test), len(X_validate)})")
 
     # vectorize the sentences
     vectorizer = CountVectorizer()
@@ -46,7 +47,10 @@ def load_data():
     return (X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer)
 
 
-def measure_accuracy(test, predicted):
+def measure_accuracy(test, predicted) -> float:
+    """
+    Measures the accuracy of the predicted labels as a fraction of the total number of labels predicted correctly.
+    """
     assert len(test) == len(predicted)
     tot = 0
     correct = 0
@@ -57,7 +61,7 @@ def measure_accuracy(test, predicted):
     return correct / tot
 
 
-def select_model(x_train, x_validate, y_train, y_validate, plot_validation_accuracy=False):
+def select_model(x_train, x_validate, y_train, y_validate, plot_validation_accuracy=False) -> Tuple[int, str, tree.DecisionTreeClassifier]:
     """
     - Trains the decision tree classifier using at least 5 different values of max_depth,
     as well as three different split criteria (information gain, log loss and Gini coefficient),
@@ -74,40 +78,47 @@ def select_model(x_train, x_validate, y_train, y_validate, plot_validation_accur
     Returns:
 
     """
-    depths = np.arange(50, 1000, 50)
+    depths = np.arange(50, 350, 50)
     criteria = ['gini', 'entropy', 'log_loss']
     hyperparams = [(d, c) for c in criteria for d in depths]
-    val_accuracies = np.zeros((len(criteria), len(depths)))
+    
+    val_accuracies = np.zeros((len(criteria), len(depths))) # array to store validation accuracies per pair of hyperparameters
+    classifiers = np.zeros((len(criteria), len(depths)), dtype=tree.DecisionTreeClassifier) # array to store classifiers per pair of hyperparameters
 
+    # train the model for each pair of hyperparameters
     for i, criterion in enumerate(criteria):
         for j, d in enumerate(depths):
             clf = tree.DecisionTreeClassifier(max_depth=d, criterion=criterion)
-            clf = clf.fit(x_train, y_train)
+            clf = clf.fit(x_train, y_train) # train the model
 
-            y_validation_prediction = clf.predict(x_validate)
+            y_validation_prediction = clf.predict(x_validate) 
 
-            val_accuracies[i, j] = measure_accuracy(y_validate, y_validation_prediction)
+            val_accuracies[i, j] = measure_accuracy(y_validate, y_validation_prediction) 
+            classifiers[i, j] = clf
 
             print(
                 f"Depth {d:3} with {criterion:8} criterion had validation accuracy {measure_accuracy(y_validate, y_validation_prediction):0.5f} ")
 
-    best_ind = np.argmax(val_accuracies)
+    best_ind = np.argmax(val_accuracies) # index of the best hyperparameters
+    best_loc = np.unravel_index(best_ind, val_accuracies.shape) # location of the best hyperparameters in the array
 
     if plot_validation_accuracy:
+        plt.figure()
         # scatter validation accuracy against max_depth, drawing lines for each criterion
         for i, criterion in enumerate(criteria):
             plt.scatter(depths, val_accuracies[i, :])
             plt.plot(depths, val_accuracies[i, :], label=criterion)
-
 
         plt.title('Validation accuracy vs. max_depth')
 
         plt.xlabel('max_depth')
         plt.ylabel('validation accuracy')
         plt.legend()
-        plt.show()
+        plt.savefig('figures/validation_accuracy.png')
 
-    return hyperparams[best_ind]
+    best_criteria, best_depth = hyperparams[best_ind]
+
+    return best_criteria, best_depth, classifiers[best_loc]
 
 def calc_entropy(prob_array: np.array):
     """
@@ -124,7 +135,10 @@ def calc_entropy(prob_array: np.array):
 
 
 def calc_expectation(var_vals: np.array, var_probs: np.array):
-    return sum(var_vals * var_probs)
+    """
+    Given a 1-D array of variable values and a 1-D array of probabilities, compute the expectation.
+    """
+    return np.sum(var_vals * var_probs)
 
 
 def compute_information_gain(x_train: np.array, y_train: np.array, feature_ind: int, threshold: float):
@@ -144,8 +158,10 @@ def compute_information_gain(x_train: np.array, y_train: np.array, feature_ind: 
     below_t = np.logical_not(above_t)  # contains True if the feature for a datapoint is below the threshold.
 
     possible_x_conclusions = [below_t, above_t]
-    possible_labels = np.unique(y_train)
+    possible_labels = np.unique(y_train) 
 
+
+    # build a table putting conclusions of x against labels of y. 
     n_labels = len(possible_labels)
     label_count_table = np.zeros((2, n_labels))
 
@@ -153,10 +169,11 @@ def compute_information_gain(x_train: np.array, y_train: np.array, feature_ind: 
         for j, label in enumerate(possible_labels):
             label_count_table[i, j] = np.sum(np.logical_and(conc, y_train == label))
 
+    # probabilities that a conclusion AND a label occur.
     probs = label_count_table / len(y_train)
 
-    x_probs: np.array = probs.sum(axis=1)
-    y_probs: np.array = probs.sum(axis=0)
+    x_probs: np.array = probs.sum(axis=1)   # probabilities that a conclusion occurs.
+    y_probs: np.array = probs.sum(axis=0)   # probabilities that a label occurs.
 
     probs_y_given_x = probs / x_probs[:, None]
 
@@ -173,14 +190,20 @@ def compute_information_gain(x_train: np.array, y_train: np.array, feature_ind: 
 
 def compute_information_gain_for(X_train: np.array, y_train: np.array, feature: str, threshold,
                                  vectorizer: CountVectorizer, print_gain=False):
+    """
+    A wrapper for compute_information_gain that takes a feature name instead of an index.
+    """
     feature_arr = vectorizer.get_feature_names_out()
     feature_ind = np.where(feature_arr == feature)[0][0]
     gain = compute_information_gain(X_train, y_train, feature_ind, threshold)
     if print_gain:
-        print(f"Information gain for feature `{feature}` with threshold {threshold} is {gain}")
+        print(f"Information gain for feature `{feature:8}` with threshold {threshold} is {gain:0.14f}")
 
 
-def export_tree(classifier: sklearn.tree.DecisionTreeClassifier):
+def export_tree(classifier: sklearn.tree.DecisionTreeClassifier, vectorizer: CountVectorizer):
+    """
+    Export a decision tree to a png file.
+    """
     dot_data = tree.export_graphviz(classifier,
                                     out_file=None,
                                     feature_names=vectorizer.get_feature_names_out(),
@@ -191,31 +214,34 @@ def export_tree(classifier: sklearn.tree.DecisionTreeClassifier):
     graph.render(filename="best_tree", directory="figures", format="png")
 
 
-if __name__ == '__main__':
+def q2_b():
     # load the data
     X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer = load_data()
-    depth, criterion = select_model(X_train, X_validate, y_train, y_validate, True)
+    depth, criterion, best_clf = select_model(X_train, X_validate, y_train, y_validate, plot_validation_accuracy=True)
 
-    # train a model with the best hyperparameters
-    clf = tree.DecisionTreeClassifier(max_depth=depth, criterion=criterion)
+    # report the best model's accuracy on the test dataset
 
-    clf.fit(X_train, y_train)
-
-    # report its accuracy on the test dataset
-
-    y_test_prediction = clf.predict(X_test)
+    y_test_prediction = best_clf.predict(X_test)
     acc = measure_accuracy(y_test, y_test_prediction)
-
-    X_train_arr = X_train.toarray()
 
     print(
         f"\nA model trained on the best hyperparameters (depth={depth}, criterion={criterion}) had test accuracy {acc}")
+    
+    export_tree(best_clf, vectorizer)
+
+
+def q2_d():
+    # load the data
+    X_train, X_validate, X_test, y_train, y_validate, y_test, vectorizer = load_data()
+    
+    X_train_arr = X_train.toarray()
 
     # print some information gain values
+    compute_information_gain_for(X_train_arr, y_train, "the", 0.5, vectorizer, print_gain=True)
     compute_information_gain_for(X_train_arr, y_train, "donald", 0.5, vectorizer, print_gain=True)
     compute_information_gain_for(X_train_arr, y_train, "trumps", 0.5, vectorizer, print_gain=True)
-    compute_information_gain_for(X_train_arr, y_train, "the", 0.5, vectorizer, print_gain=True)
     compute_information_gain_for(X_train_arr, y_train, "hillary", 0.5, vectorizer, print_gain=True)
-    compute_information_gain_for(X_train_arr, y_train, "and", 0.5, vectorizer, print_gain=True)
 
-    export_tree(clf)
+
+if __name__ == '__main__':
+    q2_d()

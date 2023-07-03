@@ -1,0 +1,20 @@
+Depth  50 with gini     criterion had validation accuracy 0.73673 
+Depth 100 with gini     criterion had validation accuracy 0.75306 
+Depth 150 with gini     criterion had validation accuracy 0.73265 
+Depth 200 with gini     criterion had validation accuracy 0.74286 
+Depth 250 with gini     criterion had validation accuracy 0.74490 
+Depth 300 with gini     criterion had validation accuracy 0.73061 
+Depth  50 with entropy  criterion had validation accuracy 0.73878 
+Depth 100 with entropy  criterion had validation accuracy 0.73061 
+Depth 150 with entropy  criterion had validation accuracy 0.76327 
+Depth 200 with entropy  criterion had validation accuracy 0.75102 
+Depth 250 with entropy  criterion had validation accuracy 0.74694 
+Depth 300 with entropy  criterion had validation accuracy 0.74490 
+Depth  50 with log_loss criterion had validation accuracy 0.74694 
+Depth 100 with log_loss criterion had validation accuracy 0.74490 
+Depth 150 with log_loss criterion had validation accuracy 0.73265 
+Depth 200 with log_loss criterion had validation accuracy 0.74286 
+Depth 250 with log_loss criterion had validation accuracy 0.75510 
+Depth 300 with log_loss criterion had validation accuracy 0.74694 
+
+A model trained on the best hyperparameters (depth=150, criterion=entropy) had test accuracy 0.773469387755102
