@@ -21,7 +21,7 @@ def logistic_predict(weights, data: np.array):
     # Given the weights and bias, compute the probabilities predicted   #
     # by the logistic classifier.                                       #
     #####################################################################
-    (N, M) = data.shape()
+    (N, M) = data.shape
     data_aug = np.hstack((data, np.ones((N, 1))))
     y = sigmoid(data_aug @ weights)
     #####################################################################
@@ -49,8 +49,8 @@ def evaluate(targets, y):
     # return cross entropy and the fraction of inputs classified        #
     # correctly.                                                        #
     #####################################################################
-    ce = np.mean(-targets * np.log2(y) - (1 - targets) * np.log2(1 - y))
-    frac_correct = np.round(y).equals(targets).sum()/targets.size
+    ce = np.mean(targets * (-np.log(y)) + (1 - targets) * (-np.log(1 - y)))
+    frac_correct = np.sum(np.round(y) == targets) / targets.size
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -72,15 +72,15 @@ def logistic(weights, data, targets, hyperparameters):
     :param hyperparameters: The hyperparameter dictionary.
     :returns: A tuple (f, df, y)
         WHERE
-        f: The average of the loss over all data points.
-           This is the objective that we want to minimize.
+            f: The average of the loss over all data points.
+               This is the objective that we want to minimize.
         df: (M + 1) x 1 vector of derivative of f w.r.t. weights.
         y: N x 1 vector of probabilities.
     """
     y = logistic_predict(weights, data)
 
     #####################################################################
-    # TODO: CHECK                                                          #
+    #                                                          #
     # Given weights and data, return the averaged loss over all data    #
     # points, gradient of parameters, and the probabilities given by    #
     # logistic regression.                                              #
@@ -90,7 +90,8 @@ def logistic(weights, data, targets, hyperparameters):
 
     data_aug = np.hstack((data, one))
 
-    f = np.mean(- targets * np.log2(y) - (one - targets) * np.log2(one - y))
+    losses = - targets * np.log(y) - (1 - targets) * np.log(1 - y)
+    f = np.mean(losses)
     df = data_aug.transpose() @ (y - targets) / N
     #####################################################################
     #                       END OF YOUR CODE                            #
