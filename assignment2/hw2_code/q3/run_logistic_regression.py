@@ -7,11 +7,11 @@ import numpy as np
 
 
 def run_logistic_regression():
-    # train_inputs, train_targets = load_train()
-    train_inputs, train_targets = load_train_small()
+    train_inputs, train_targets = load_train()
+    # train_inputs, train_targets = load_train_small()
     valid_inputs, valid_targets = load_valid()
 
-    N, M = train_inputs.shape
+    N, d = train_inputs.shape
 
     #####################################################################
     # TODO:                                                             #
@@ -23,7 +23,7 @@ def run_logistic_regression():
         "weight_regularization": 1.0,
         "num_iterations": 500
     }
-    weights = np.zeros((M + 1, 1))
+    weights = np.random.randn(d + 1, 1)
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -81,7 +81,8 @@ def run_logistic_regression():
     plt.ylabel("Cross-Entropy Loss")  # Label y-axis
     plt.legend()  # Show legend
     plt.grid(True)  # Show grid
-    plt.savefig('../../figures/mnist_train_small.png')  # Display the plot
+    plt.show()
+    # plt.savefig('../../figures/mnist_train_small.png')  # Display the plot
 
     #####################################################################
     #                       END OF YOUR CODE                            #
